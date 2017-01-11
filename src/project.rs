@@ -12,7 +12,7 @@ impl Project {
             branch: branch.to_owned(),
         }
     }
-    pub fn get_url_frag(&self) -> &str {
-        &format!("{}/{}", &self.name, &self.branch)
+    pub fn get_url_frag(&self) -> String {
+        format!("{}/{}", self.name, self.branch)
     }
 }

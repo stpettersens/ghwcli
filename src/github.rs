@@ -12,7 +12,7 @@ impl GitHub {
             password: password.to_owned(),
         }
     }
-    pub fn get_url_frag(&self) -> &str {
-        &format!("https://raw.githubusercontent.com/{}/", &self.user)
+    pub fn get_url_frag(&self) -> String {
+        format!("https://raw.githubusercontent.com/{}/", self.user)
     }
 }
