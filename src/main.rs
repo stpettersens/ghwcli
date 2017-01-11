@@ -15,7 +15,6 @@ use project::Project;
 use curl::easy::Easy;
 use clioptions::CliOptions;
 use std::io::{stdout, Write};
-use std::fmt;
 
 fn retrieve_file(gh: GitHub, project: Project, file: &str) {
     println!("Retrieving file: {}{}{}", gh.get_url_frag(), project.get_url_frag(), file);
@@ -34,5 +33,4 @@ fn main() {
     let project = Project::new("touch", "master");
     let file = "README.md";
     retrieve_file(gh, project, &file);
-    println!("Hello, world!");
 }
