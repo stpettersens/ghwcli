@@ -13,6 +13,6 @@ impl Project {
         }
     }
     pub fn get_url_frag(&self) -> &str {
-        &format!("{}/{}", self.name, self.branch)
+        &format!("{}/{}", &self.name, &self.branch)
     }
 }

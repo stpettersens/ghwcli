@@ -13,6 +13,6 @@ impl GitHub {
         }
     }
     pub fn get_url_frag(&self) -> &str {
-        &format!("https://raw.githubusercontent.com/{}/", self.user)
+        &format!("https://raw.githubusercontent.com/{}/", &self.user)
     }
 }
