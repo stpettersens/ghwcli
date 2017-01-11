@@ -1,15 +1,15 @@
 use std::fmt;
 
 pub struct GitHub {
-    user: &str,
-    password: &str,
+    user: String,
+    password: String,
 }
 
 impl GitHub {
     pub fn new(user: &str, password: &str) -> GitHub {
         GitHub {
-            user: user,
-            password: password,
+            user: user.to_owned(),
+            password: password.to_owned(),
         }
     }
     pub fn get_url_frag(&self) -> &str {

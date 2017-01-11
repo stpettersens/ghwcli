@@ -1,15 +1,15 @@
 use std::fmt;
 
 pub struct Project {
-    name: &str,
-    branch: &str,
+    name: String,
+    branch: String,
 }
 
 impl Project {
     pub fn new(name: &str, branch: &str) -> Project {
         Project {
-            name: name,
-            branch: branch,
+            name: name.to_owned(),
+            branch: branch.to_owned(),
         }
     }
     pub fn get_url_frag(&self) -> &str {
