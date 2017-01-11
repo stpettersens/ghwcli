@@ -33,6 +33,6 @@ fn main() {
     let gh = GitHub::new("stpettersens", "dummy123");
     let project = Project::new("touch", "master");
     let file = "README.md";
-    retrieve_file(gh, &file);
+    retrieve_file(gh, project, &file);
     println!("Hello, world!");
 }
