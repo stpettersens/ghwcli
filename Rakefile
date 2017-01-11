@@ -9,4 +9,3 @@ end
 task :cleanlock do
 	File.delete("Cargo.lock")
 end
-
