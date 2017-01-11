@@ -31,7 +31,7 @@ fn retrieve_file(gh: GitHub, project: Project, file: &str) {
 
 fn main() {
     let gh = GitHub::new("stpettersens", "dummy123");
-    let file = "README.md"
+    let file = "README.md";
     retrieve_file(gh, &file);
     println!("Hello, world!");
 }
