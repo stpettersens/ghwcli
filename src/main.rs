@@ -20,7 +20,7 @@ use std::fmt;
 fn retrieve_file(gh: GitHub, project: Project, file: &str) {
     println!("retrieving file: {}{}{}", gh.get_url_frag(), project.get_url_frag(), file);
     let mut c = Easy::new();
-    c.url(format!("{}{}{}", gh.get_url_frag(), project.get_url_frag(), file)).unwrap();
+    c.url(&format!("{}{}{}", gh.get_url_frag(), project.get_url_frag(), file)).unwrap();
     c.write_function(|data| {
         Ok(stdout().write(data).unwrap())
     }).unwrap();
@@ -31,6 +31,7 @@ fn retrieve_file(gh: GitHub, project: Project, file: &str) {
 
 fn main() {
     let gh = GitHub::new("stpettersens", "dummy123");
+    let project = Project::new("touch", "master");
     let file = "README.md";
     retrieve_file(gh, &file);
     println!("Hello, world!");
