@@ -28,5 +28,5 @@ task :cleanlock do
 end
 
 task :test do
-	puts "!TODO"
+	sh "#{tp}"
 end
