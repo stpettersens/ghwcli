@@ -1,0 +1,15 @@
+notifications: 
+    email: false
+
+sudo: required
+language: rust
+
+before_install:
+    - sudo apt-get install -y rubygems
+    - sudo gem install os
+    - ruby --version
+    - rake --version
+
+script:
+    - rake
+    - rake test
