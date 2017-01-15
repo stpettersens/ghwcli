@@ -33,5 +33,11 @@ task :cleanlock do
 end
 
 task :test do
-	sh "#{tp}"
+	sh "#{tp} clone README.md"
+	puts 
+	if OS.windows? then
+		sh "type _git_\\README.md"
+	else
+		sh "cat -n _git_/README.md"
+	end
 end
