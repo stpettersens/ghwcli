@@ -1,4 +1,5 @@
 require 'os'
+require 'fileutils'
 
 target = "ghwcli"
 tp = "target/release/#{target}"
@@ -17,6 +18,10 @@ task :upx => [:default] do
 		File.delete(target)
 	end
 	sh "upx -9 #{tp} -o #{target}"
+end
+
+task :cleanwrk do
+	FileUtils.rm_rf("_git_");
 end
 
 task :clean do
