@@ -1,5 +1,3 @@
-use std::fmt;
-
 pub struct GitHub {
     user: String,
     password: String,

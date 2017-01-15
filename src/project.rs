@@ -1,5 +1,3 @@
-use std::fmt;
-
 pub struct Project {
     name: String,
     branch: String,
