@@ -38,6 +38,6 @@ task :test do
 	if OS.windows? then
 		sh "type _git_\\README.md"
 	else
-		sh "cat -n _git_/README.md"
+		sh "cat _git_/README.md"
 	end
 end
