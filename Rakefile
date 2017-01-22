@@ -22,6 +22,8 @@ end
 
 task :cleanwrk do
 	FileUtils.rm_rf("_git_");
+	File.delete(".github.json");
+	File.delete(".project.json");
 end
 
 task :clean do
@@ -33,6 +35,8 @@ task :cleanlock do
 end
 
 task :test do
+	sh "#{tp} configure"
+	puts
 	sh "#{tp} clone README.md"
 	puts 
 	if OS.windows? then

@@ -1,3 +1,4 @@
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct Project {
     name: String,
     branch: String,

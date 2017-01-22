@@ -66,16 +66,39 @@ fn check_for_diff(orig: &str, edit: &str) {
     println!("cs: {:?}", changeset);
 }
 
-fn load_gh_configuration(program: &str, conf: &str) -> GitHub {
-    if !Path::new(&conf).exists() {
-        display_error(&program,
-        "Not configured for GitHub user.\nRun `configure` command");
-    }
+fn write_common_configuration(conf: &str, o: &str) {
+    let mut w = File::create(conf).unwrap();
+    let fo = format!("{}\n", o);
+    let _ = w.write_all(fo.as_bytes());
+}
+
+fn write_gh_configuration(conf: &str) {
+    let gh = GitHub::new("stpettersens", "-");
+    let o = json::encode(&gh).unwrap();
+    write_common_configuration(conf, &o);
+}
+
+fn write_project_configuration(conf: &str) {
+    let project = Project::new("touch", "master");
+    let o = json::encode(&project).unwrap();
+    write_common_configuration(conf, &o);
+}
+
+fn load_common_configuration(conf: &str) -> String {
     let mut lines = String::new();
     let mut file = File::open(conf).unwrap();
     let _ = file.read_to_string(&mut lines);
-    let ghj = Json::from_str(&lines).unwrap();
+    lines
+}
+
+fn load_gh_configuration(conf: &str) -> GitHub {
+    let ghj = Json::from_str(&load_common_configuration(&conf)).unwrap();
     json::decode(&ghj.to_string()).unwrap()
+}
+
+fn load_project_configuration(conf: &str) -> Project {
+    let prj = Json::from_str(&load_common_configuration(&conf)).unwrap();
+    json::decode(&prj.to_string()).unwrap()
 }
 
 fn display_error(program: &str, err: &str) {
@@ -94,10 +117,19 @@ fn main() {
 
     // ---------------------------------
     let ghconf = ".github.json";
+    let prjconf = ".project.json";
     // ---------------------------------
 
-    let gh: GitHub = load_gh_configuration(&program, ghconf);
-    let project = Project::new("touch", "master");
+    if !Path::new(ghconf).exists() {
+        write_gh_configuration(ghconf)
+    }
+
+    if !Path::new(prjconf).exists() {
+        write_project_configuration(prjconf);
+    }
+
+    let gh: GitHub = load_gh_configuration(ghconf);
+    let project: Project = load_project_configuration(prjconf);
 
     let mut file = String::new();
     let mut verbose = true;
@@ -111,7 +143,7 @@ fn main() {
                     op = 0;
                     file = cli.next_argument(i);
                 },
-                "demo" => op = 1,
+                "configure" => op = 1,
                 _ => continue,
             }
         }
@@ -120,7 +152,10 @@ fn main() {
     }
     match op {
         0 => retrieve_file(gh, project, &file, verbose),
-        1 => check_for_diff("foo", "bar"),
+        1 => {
+            write_gh_configuration(ghconf);
+            write_project_configuration(prjconf);
+        },
         _ => {}
     }
 }
