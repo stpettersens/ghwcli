@@ -1,16 +1,17 @@
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct GitHub {
-    user: String,
+    username: String,
     password: String,
 }
 
 impl GitHub {
-    pub fn new(user: &str, password: &str) -> GitHub {
+    pub fn new(username: &str, password: &str) -> GitHub {
         GitHub {
-            user: user.to_owned(),
+            username: username.to_owned(),
             password: password.to_owned(),
         }
     }
     pub fn get_url_frag(&self) -> String {
-        format!("https://raw.githubusercontent.com/{}/", self.user)
+        format!("https://raw.githubusercontent.com/{}/", self.username)
     }
 }

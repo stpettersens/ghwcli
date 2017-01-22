@@ -7,3 +7,4 @@ authors = ["Sam Saint-Pettersen <s.stpettersen+github@gmail.com>"]
 curl = "0.4.3"
 clioptions = "0.1.0"
 text-diff = "0.4.0"
+rustc-serialize = "0.3.22"
