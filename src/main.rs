@@ -11,6 +11,7 @@ mod project;
 extern crate curl;
 extern crate text_diff;
 extern crate rustc_serialize;
+extern crate regex;
 extern crate clioptions;
 use github::GitHub;
 use project::Project;
@@ -18,8 +19,9 @@ use curl::easy::Easy;
 use text_diff::{diff, print_diff, Difference};
 use rustc_serialize::json;
 use rustc_serialize::json::Json;
+use regex::Regex;
 use clioptions::CliOptions;
-use std::io::{Read, Write};
+use std::io::{stdin, Read, Write};
 use std::fs;
 use std::fs::File;
 use std::path::Path;
@@ -60,6 +62,10 @@ fn retrieve_file(gh: GitHub, project: Project, file: &str, verbose: bool) {
     }
 }
 
+fn retrieve_repo(gh: GitHub, project: Project, verbose: bool) {
+    retrieve_file(gh, project, "README.md", verbose);
+}
+
 fn check_for_diff(orig: &str, edit: &str) {
     let (dist, changeset) = diff(orig, edit, "");
     println!("dist: {:?}", dist);
@@ -72,14 +78,31 @@ fn write_common_configuration(conf: &str, o: &str) {
     let _ = w.write_all(fo.as_bytes());
 }
 
+fn get_input(prompt: &str) -> String {
+    println!("{}? ", prompt);
+    let mut input = String::new();
+    match stdin().read_line(&mut input) {
+        Ok(_) => {},
+        Err(error) => {
+            println!("Stdin Error: {}", error);
+            exit(-1);
+        }
+    }
+    input.trim().to_owned()
+}
+
 fn write_gh_configuration(conf: &str) {
-    let gh = GitHub::new("stpettersens", "-");
+    let username = get_input("Username");
+    let password = get_input("Password");
+    let gh = GitHub::new(&username, &password);
     let o = json::encode(&gh).unwrap();
     write_common_configuration(conf, &o);
 }
 
 fn write_project_configuration(conf: &str) {
-    let project = Project::new("touch", "master");
+    let name = get_input("Project name");
+    let branch = get_input("Branch");
+    let project = Project::new(&name, &branch);
     let o = json::encode(&project).unwrap();
     write_common_configuration(conf, &o);
 }
@@ -101,13 +124,32 @@ fn load_project_configuration(conf: &str) -> Project {
     json::decode(&prj.to_string()).unwrap()
 }
 
+fn display_version() {
+    println!("ghwcli v. 0.1.0");
+    println!("This program uses libcurl (https://curl.haxx.se)");
+    exit(0);
+}
+
 fn display_error(program: &str, err: &str) {
     println!("Error: {}.\n", err);
     display_usage(program, -1);
 }
 
 fn display_usage(program: &str, code: i32) {
-    println!("Usage: {} <command> [<file>]", program);
+    println!("ghwcli (GitHub Web Command Line).");
+    println!("Alternative command line utility to commit to GitHub.");
+    println!("Copyright 2017 Sam Saint-Pettersen.");
+    println!("\nReleased under the MIT License.");
+    println!("\nUsage: {} <command> [<repo>][<options>]", program);
+    println!("\nCommands:\n");
+    println!("clone : Clone the configured project or at specified GitHub repo.");
+    println!("diff : See the differences between working directory and GitHub repo.");
+    println!("commit : Commit the local changes back to the GitHub repo.");
+    println!("push : Push the local changes back to the GitHub repo.");
+    println!("\nOptions:\n");
+    println!("-h | --help : Display this usage information and exit.");
+    println!("-v | --version : Display program version and exit.");
+    println!("-q | --quiet : Do not output non-error messages to stdout.");
     exit(code);
 }
 
@@ -120,18 +162,9 @@ fn main() {
     let prjconf = ".project.json";
     // ---------------------------------
 
-    if !Path::new(ghconf).exists() {
-        write_gh_configuration(ghconf)
-    }
-
-    if !Path::new(prjconf).exists() {
-        write_project_configuration(prjconf);
-    }
-
-    let gh: GitHub = load_gh_configuration(ghconf);
-    let project: Project = load_project_configuration(prjconf);
-
-    let mut file = String::new();
+    let mut gh: GitHub = GitHub::new("u", "p");
+    let mut project: Project = Project::new("n", "b");
+    let mut repo = String::new();
     let mut verbose = true;
     let mut op = -1;
 
@@ -139,9 +172,11 @@ fn main() {
         for (i, a) in cli.get_args().iter().enumerate() {
             match a.trim() {
                 "-h" | "--help" => display_usage(&program, 0),
+                "-v" | "--version" => display_version(),
+                "-q" | "--quiet" => verbose = false,
                 "clone" => {
                     op = 0;
-                    file = cli.next_argument(i);
+                    repo = cli.next_argument(i);
                 },
                 "configure" => op = 1,
                 _ => continue,
@@ -150,8 +185,30 @@ fn main() {
     } else {
         display_error(&program, "No options provided");
     }
+    
+    if repo.is_empty() {
+        if !Path::new(ghconf).exists() {
+            write_gh_configuration(ghconf)
+        }
+
+        if !Path::new(prjconf).exists() {
+            write_project_configuration(prjconf);
+        }
+
+        gh = load_gh_configuration(ghconf);
+        project = load_project_configuration(prjconf);
+    }
     match op {
-        0 => retrieve_file(gh, project, &file, verbose),
+        0 => {
+            if !repo.is_empty() {
+                let p = Regex::new(r"(\w+)/([\w-]+)").unwrap();
+                for cap in p.captures_iter(&repo) {
+                    gh = GitHub::new(&cap[1], "-");
+                    project = Project::new(&cap[2], "master");
+                }
+            }
+            retrieve_repo(gh, project, verbose);
+        },
         1 => {
             write_gh_configuration(ghconf);
             write_project_configuration(prjconf);

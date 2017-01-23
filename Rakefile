@@ -28,6 +28,9 @@ end
 
 task :clean do
 	sh "cargo clean"
+	if File.exists?(target) then
+		File.delete(target)
+	end
 end
 
 task :cleanlock do
@@ -35,9 +38,11 @@ task :cleanlock do
 end
 
 task :test do
-	sh "#{tp} configure"
+	sh "#{tp} --help"
 	puts
-	sh "#{tp} clone README.md"
+	sh "#{tp} --version"
+	puts
+	sh "#{tp} clone stpettersens/touch"
 	puts 
 	if OS.windows? then
 		sh "type _git_\\README.md"
