@@ -14,4 +14,7 @@ impl GitHub {
     pub fn get_url_frag(&self) -> String {
         format!("https://raw.githubusercontent.com/{}/", self.username)
     }
+    pub fn get_index_frag(&self) -> String {
+        format!("https://github.com/{}/", self.username)
+    }
 }

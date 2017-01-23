@@ -12,6 +12,7 @@ extern crate curl;
 extern crate text_diff;
 extern crate rustc_serialize;
 extern crate regex;
+extern crate select;
 extern crate clioptions;
 use github::GitHub;
 use project::Project;
@@ -20,8 +21,10 @@ use text_diff::{diff, print_diff, Difference};
 use rustc_serialize::json;
 use rustc_serialize::json::Json;
 use regex::Regex;
+use select::document::Document;
+use select::predicate::{Predicate, Attr, Class, Element, Name};
 use clioptions::CliOptions;
-use std::io::{stdin, Read, Write};
+use std::io::{stdin, stdout, Read, Write};
 use std::fs;
 use std::fs::File;
 use std::path::Path;
@@ -39,11 +42,18 @@ fn split_path_from_file(pathstr: &str) -> String {
     path.join("/")
 }
 
-fn retrieve_file(gh: GitHub, project: Project, file: &str, verbose: bool) {
+fn retrieve_file(gh: GitHub, project: Project, file: &str, verbose: bool, index: bool) {
     let mut c = Easy::new();
-    c.url(&format!("{}{}{}", gh.get_url_frag(), project.get_url_frag(), file)).unwrap();
+    if index {
+        c.url(&format!("{}{}", gh.get_index_frag(), project.get_index_frag())).unwrap();
+        if verbose {
+            println!("Retrieving index: {}{}", gh.get_index_frag(), project.get_index_frag());
+        }
+    } else {
+        c.url(&format!("{}{}{}", gh.get_url_frag(), project.get_url_frag(), file)).unwrap();
+    }
     let pw = "_git_";
-    let out = format!("{}/{}", pw, file);
+    let mut out = format!("{}/{}", pw, file);
     let p = split_path_from_file(&out);
     if !Path::new(&p).exists() {
         let _ = fs::create_dir_all(p);
@@ -56,14 +66,21 @@ fn retrieve_file(gh: GitHub, project: Project, file: &str, verbose: bool) {
     if c.response_code().unwrap() != 200 {
         let _ = fs::remove_file(&out);
     }
-    if verbose {
+    if verbose && !index {
         println!("Retrieved file: {}{}{} [{}]", 
         gh.get_url_frag(), project.get_url_frag(), file, c.response_code().unwrap());
     }
 }
 
+fn get_files(gh: GitHub, project: Project, verbose: bool) -> Vec<String> {
+    retrieve_file(gh, project, "index.html", verbose, true);
+    Vec::new()
+}
+
 fn retrieve_repo(gh: GitHub, project: Project, verbose: bool) {
-    retrieve_file(gh, project, "README.md", verbose);
+    //let files = get_files(gh, project, verbose);
+    //println!("{:?}", files);
+    retrieve_file(gh, project, "README.md", verbose, false);
 }
 
 fn check_for_diff(orig: &str, edit: &str) {
