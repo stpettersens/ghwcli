@@ -43,8 +43,8 @@ task :test do
 	sh "#{tp} clone stpettersens/touch"
 	puts 
 	if OS.windows? then
-		sh "type _git_\\stpettersens\\touch\\README.md"
+		sh "type _git_\\stpettersens\\touch\\master\\README.md"
 	else
-		sh "cat _git_/stpettersens/touch/README.md"
+		sh "cat _git_/stpettersens/touch/master/README.md"
 	end
 end
