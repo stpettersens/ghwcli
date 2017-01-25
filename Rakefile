@@ -22,8 +22,6 @@ end
 
 task :cleanwrk do
 	FileUtils.rm_rf("_git_");
-	File.delete(".github.json");
-	File.delete(".project.json");
 end
 
 task :clean do
@@ -44,9 +42,9 @@ task :test do
 	puts
 	sh "#{tp} clone stpettersens/touch"
 	puts 
-	#if OS.windows? then
-		#sh "type _git_\\README.md"
-	#else
-		#sh "cat _git_/README.md"
-	#end
+	if OS.windows? then
+		sh "type _git_\\stpettersens\\touch\\README.md"
+	else
+		sh "cat _git_/stpettersens/touch/README.md"
+	end
 end

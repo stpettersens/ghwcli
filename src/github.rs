@@ -11,8 +11,11 @@ impl GitHub {
             password: password.to_owned(),
         }
     }
+    pub fn get_base_url(&self) -> String {
+        "https://raw.githubusercontent.com".to_owned()
+    }
     pub fn get_url_frag(&self) -> String {
-        format!("https://raw.githubusercontent.com/{}/", self.username)
+        format!("{}/{}/", self.get_base_url(), self.username)
     }
     pub fn get_index_frag(&self) -> String {
         format!("https://github.com/{}/", self.username)

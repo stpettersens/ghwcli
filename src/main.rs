@@ -42,7 +42,18 @@ fn split_path_from_file(pathstr: &str) -> String {
     path.join("/")
 }
 
-fn retrieve_file(gh: GitHub, project: Project, file: &str, verbose: bool, index: bool) {
+fn split_url_from_blob(burl: &str) -> String {
+    let split = burl.split("/blob/");
+    let mut url: Vec<String> = Vec::new();
+    for s in split {
+        if s.to_owned().len() > 0 {
+            url.push(s.to_owned())
+        }
+    }
+    url.join("/")
+}
+
+fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, index: bool) {
     let mut c = Easy::new();
     if index {
         c.url(&format!("{}{}", gh.get_index_frag(), project.get_index_frag())).unwrap();
@@ -50,10 +61,10 @@ fn retrieve_file(gh: GitHub, project: Project, file: &str, verbose: bool, index:
             println!("Retrieving index: {}{}", gh.get_index_frag(), project.get_index_frag());
         }
     } else {
-        c.url(&format!("{}{}{}", gh.get_url_frag(), project.get_url_frag(), file)).unwrap();
+        c.url(&format!("{}{}", gh.get_base_url(), file)).unwrap();
     }
     let pw = "_git_";
-    let mut out = format!("{}/{}", pw, file);
+    let out = format!("{}/{}", pw, file);
     let p = split_path_from_file(&out);
     if !Path::new(&p).exists() {
         let _ = fs::create_dir_all(p);
@@ -67,26 +78,39 @@ fn retrieve_file(gh: GitHub, project: Project, file: &str, verbose: bool, index:
         let _ = fs::remove_file(&out);
     }
     if verbose && !index {
-        println!("Retrieved file: {}{}{} [{}]", 
-        gh.get_url_frag(), project.get_url_frag(), file, c.response_code().unwrap());
+        println!("Retrieved file: {}{} [{}]", 
+        gh.get_base_url(), file, c.response_code().unwrap());
     }
 }
 
-fn get_files(gh: GitHub, project: Project, verbose: bool) -> Vec<String> {
-    //retrieve_file(gh, project, "index.html", verbose, true);
+fn get_files(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
+    retrieve_file(&gh, &project, "_index.html", verbose, true);
+    let index = "_git_/_index.html";
+    let mut f = File::open(&index).unwrap();
+    let mut html = String::new();
+    let _ = f.read_to_string(&mut html);
     let mut links: Vec<String> = Vec::new();
-    for node in Document::from_str(
-    "<html><head></head><body><article><a href=\"/foo\">foo</a></article></body></html>")
-    .find(Name("a")).iter() {
+    for node in Document::from_str(&html).find(Name("a")).iter() {
         links.push(node.attr("href").unwrap().to_owned());
     }
-    links
+    //println!("{:?}", links);
+    let mut flinks: Vec<String> = Vec::new();
+    for link in &links {
+        let p = Regex::new("/blob/").unwrap();
+        if p.is_match(&link) {
+            flinks.push(split_url_from_blob(&link));
+        }
+    }
+    let _ = fs::remove_file(&index);
+    flinks.remove(0);
+    flinks
 }
 
-fn retrieve_repo(gh: GitHub, project: Project, verbose: bool) {
-    let files = get_files(gh, project, verbose);
-    println!("{:?}", files);
-    //retrieve_file(gh, project, "README.md", verbose, false);
+fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
+    let files = get_files(&gh, &project, verbose);
+    for file in files {
+        retrieve_file(&gh, &project, &file, verbose, false);
+    }
 }
 
 fn check_for_diff(orig: &str, edit: &str) {
@@ -230,7 +254,7 @@ fn main() {
                     project = Project::new(&cap[2], "master");
                 }
             }
-            retrieve_repo(gh, project, verbose);
+            retrieve_repo(&gh, &project, verbose);
         },
         1 => {
             write_gh_configuration(ghconf);
