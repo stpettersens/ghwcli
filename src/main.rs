@@ -22,7 +22,7 @@ use rustc_serialize::json;
 use rustc_serialize::json::Json;
 use regex::Regex;
 use select::document::Document;
-use select::predicate::{Predicate, Attr, Class, Element, Name};
+use select::predicate::Name;
 use clioptions::CliOptions;
 use std::io::{stdin, stdout, Read, Write};
 use std::fs;
@@ -73,14 +73,20 @@ fn retrieve_file(gh: GitHub, project: Project, file: &str, verbose: bool, index:
 }
 
 fn get_files(gh: GitHub, project: Project, verbose: bool) -> Vec<String> {
-    retrieve_file(gh, project, "index.html", verbose, true);
-    Vec::new()
+    //retrieve_file(gh, project, "index.html", verbose, true);
+    let mut links: Vec<String> = Vec::new();
+    for node in Document::from_str(
+    "<html><head></head><body><article><a href=\"/foo\">foo</a></article></body></html>")
+    .find(Name("a")).iter() {
+        links.push(node.attr("href").unwrap().to_owned());
+    }
+    links
 }
 
 fn retrieve_repo(gh: GitHub, project: Project, verbose: bool) {
-    //let files = get_files(gh, project, verbose);
-    //println!("{:?}", files);
-    retrieve_file(gh, project, "README.md", verbose, false);
+    let files = get_files(gh, project, verbose);
+    println!("{:?}", files);
+    //retrieve_file(gh, project, "README.md", verbose, false);
 }
 
 fn check_for_diff(orig: &str, edit: &str) {

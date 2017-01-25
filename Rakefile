@@ -44,9 +44,9 @@ task :test do
 	puts
 	sh "#{tp} clone stpettersens/touch"
 	puts 
-	if OS.windows? then
-		sh "type _git_\\README.md"
-	else
-		sh "cat _git_/README.md"
-	end
+	#if OS.windows? then
+		#sh "type _git_\\README.md"
+	#else
+		#sh "cat _git_/README.md"
+	#end
 end
