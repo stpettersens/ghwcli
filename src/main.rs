@@ -99,6 +99,11 @@ fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32) -> Vec<
     links
 }
 
+fn get_tree(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
+    // TODO
+    Vec::new()
+}
+
 fn get_files(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
     let links: Vec<String> = get_index(&gh, &project, verbose, 1);
     let mut flinks: Vec<String> = Vec::new();
