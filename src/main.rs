@@ -53,13 +53,15 @@ fn split_url_from_blob(burl: &str) -> String {
     url.join("/")
 }
 
-fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, index: bool) {
+fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, index: u32) {
     let mut c = Easy::new();
-    if index {
+    if index == 1 {
         c.url(&format!("{}{}", gh.get_index_frag(), project.get_index_frag())).unwrap();
         if verbose {
             println!("Retrieving index: {}{}", gh.get_index_frag(), project.get_index_frag());
         }
+    } else if index == 2 {
+        c.url(&format!("{}/{}", gh.get_index_frag(), file)).unwrap();
     } else {
         c.url(&format!("{}{}", gh.get_base_url(), file)).unwrap();
     }
@@ -77,15 +79,15 @@ fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, inde
     if c.response_code().unwrap() != 200 {
         let _ = fs::remove_file(&out);
     }
-    if verbose && !index {
+    if verbose && index == 0 {
         println!("Retrieved file: {}{} [{}]", 
         gh.get_base_url(), file, c.response_code().unwrap());
     }
 }
 
-fn get_files(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
-    retrieve_file(&gh, &project, "_index.html", verbose, true);
-    let index = "_git_/_index.html";
+fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32) -> Vec<String> {
+    retrieve_file(&gh, &project, "index.html", verbose, dindex);
+    let index = "_git_/index.html";
     let mut f = File::open(&index).unwrap();
     let mut html = String::new();
     let _ = f.read_to_string(&mut html);
@@ -93,15 +95,23 @@ fn get_files(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
     for node in Document::from_str(&html).find(Name("a")).iter() {
         links.push(node.attr("href").unwrap().to_owned());
     }
-    //println!("{:?}", links);
+    //let _ = fs::remove_file(&index);
+    links
+}
+
+fn get_files(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
+    let links: Vec<String> = get_index(&gh, &project, verbose, 1);
     let mut flinks: Vec<String> = Vec::new();
     for link in &links {
-        let p = Regex::new("/blob/").unwrap();
+        let mut p = Regex::new("/blob/").unwrap();
         if p.is_match(&link) {
             flinks.push(split_url_from_blob(&link));
         }
+        /*p = Regex::new("/tree/").unwrap();
+        if p.is_match(&link) {
+            flinks.push(link.clone());
+        }*/
     }
-    let _ = fs::remove_file(&index);
     flinks.remove(0);
     flinks
 }
@@ -109,7 +119,7 @@ fn get_files(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
 fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
     let files = get_files(&gh, &project, verbose);
     for file in files {
-        retrieve_file(&gh, &project, &file, verbose, false);
+        retrieve_file(&gh, &project, &file, verbose, 0);
     }
 }
 
