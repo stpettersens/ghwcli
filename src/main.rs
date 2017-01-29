@@ -53,6 +53,18 @@ fn split_url_from_blob(burl: &str) -> String {
     url.join("/")
 }
 
+fn split_dir_from_tree(url: &str) -> String {
+    let split = url.split("/tree/");
+    let mut dir: Vec<String> = Vec::new();
+    for s in split {
+        if s.to_owned().len() > 0 {
+            dir.push(s.to_owned());
+        }
+    }
+    dir.remove(0);
+    dir.join("/")
+}
+
 fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, index: u32) {
     let mut c = Easy::new();
     if index == 1 {
@@ -61,7 +73,7 @@ fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, inde
             println!("Retrieving index: {}{}", gh.get_index_frag(), project.get_index_frag());
         }
     } else if index == 2 {
-        c.url(&format!("{}/{}", gh.get_index_frag(), file)).unwrap();
+        c.url(&format!("{}{}{}", gh.get_index_frag(), project.get_tree_frag(), file)).unwrap();
     } else {
         c.url(&format!("{}{}", gh.get_base_url(), file)).unwrap();
     }
@@ -85,8 +97,8 @@ fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, inde
     }
 }
 
-fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32) -> Vec<String> {
-    retrieve_file(&gh, &project, "index.html", verbose, dindex);
+fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &str) -> Vec<String> {
+    retrieve_file(&gh, &project, file, verbose, dindex);
     let index = "_git_/index.html";
     let mut f = File::open(&index).unwrap();
     let mut html = String::new();
@@ -99,32 +111,31 @@ fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32) -> Vec<
     links
 }
 
-fn get_tree(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
-    // TODO
-    Vec::new()
-}
-
-fn get_files(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
-    let links: Vec<String> = get_index(&gh, &project, verbose, 1);
-    let mut flinks: Vec<String> = Vec::new();
+fn get_files(gh: &GitHub, project: &Project, verbose: bool) -> (Vec<String>, Vec<String>) {
+    let links: Vec<String> = get_index(&gh, &project, verbose, 1, "index.html");
+    let mut files: Vec<String> = Vec::new();
+    let mut branches: Vec<String> = Vec::new();
     for link in &links {
         let mut p = Regex::new("/blob/").unwrap();
         if p.is_match(&link) {
-            flinks.push(split_url_from_blob(&link));
+            files.push(split_url_from_blob(&link));
         }
-        /*p = Regex::new("/tree/").unwrap();
+        p = Regex::new("/tree/").unwrap();
         if p.is_match(&link) {
-            flinks.push(link.clone());
-        }*/
+            branches.push(split_dir_from_tree(&link.clone()));
+        }
     }
-    flinks.remove(0);
-    flinks
+    files.remove(0);
+    (files, branches)
 }
 
 fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
-    let files = get_files(&gh, &project, verbose);
+    let (files, branches) = get_files(&gh, &project, verbose);
     for file in files {
         retrieve_file(&gh, &project, &file, verbose, 0);
+    }
+    for branch in branches {
+        println!("{}", branch);
     }
 }
 
