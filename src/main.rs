@@ -79,12 +79,12 @@ fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, inde
         c.url(&format!("{}{}", gh.get_base_url(), file)).unwrap();
     }
     let pw = "_git_";
-    let mut out = "...";
-    if index == 2 {
-        out = format!("{}/index.html", pw);
-    } else {
-        out = format!("{}/{}", pw, file);
-    }
+    //let mut out = "...";
+    /*if index == 2 {
+        out = &format!("{}/index.html", pw);
+    } else {*/
+    let out = format!("{}/{}", pw, file);
+    /*}*/
     let p = split_path_from_file(&out);
     if !Path::new(&p).exists() {
         let _ = fs::create_dir_all(p);
