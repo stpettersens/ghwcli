@@ -15,7 +15,7 @@ impl Project {
         format!("{}/{}/", self.name, self.branch)
     }
     pub fn get_tree_frag(&self) -> String {
-        format!("{}/tree/{}", self.name, self.branch)
+        format!("{}/tree/", self.name)
     }
     pub fn get_index_frag(&self) -> String {
         format!("{}", self.name)
