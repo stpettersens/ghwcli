@@ -111,7 +111,7 @@ fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &
     for node in Document::from_str(&html).find(Name("a")).iter() {
         links.push(node.attr("href").unwrap().to_owned());
     }
-    //let _ = fs::remove_file(&index);
+    let _ = fs::remove_file(&index); // !!!
     links
 }
 
@@ -131,7 +131,7 @@ fn get_files(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &
             branches.push(split_dir_from_tree(&link.clone()));
         }
     }
-    println!("Links: {:?}", files); // !!!
+    //println!("Links: {:?}", files); // !!!
     if dindex < 2 {
         files.remove(0);
     }
