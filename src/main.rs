@@ -132,9 +132,9 @@ fn get_files(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &
         }
     }
     //println!("Links: {:?}", files); // !!!
-    if dindex < 2 {
+    /*if dindex < 2 {
         files.remove(0);
-    }
+    }*/
     (files, branches)
 }
 
