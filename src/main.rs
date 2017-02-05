@@ -79,12 +79,10 @@ fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, inde
         c.url(&format!("{}{}", gh.get_base_url(), file)).unwrap();
     }
     let pw = "_git_";
-    //let mut out = "...";
-    /*if index == 2 {
-        out = &format!("{}/index.html", pw);
-    } else {*/
-    let out = format!("{}/{}", pw, file);
-    /*}*/
+    let mut out = format!("{}/{}", pw, file);
+    if index == 2 {
+        out = format!("{}/index.html", pw);
+    }
     let p = split_path_from_file(&out);
     if !Path::new(&p).exists() {
         let _ = fs::create_dir_all(p);
@@ -118,8 +116,9 @@ fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &
 }
 
 
-fn get_files(gh: &GitHub, project: &Project, verbose: bool) -> (Vec<String>, Vec<String>) {
-    let links: Vec<String> = get_index(&gh, &project, verbose, 1, "index.html");
+fn get_files(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &str) 
+-> (Vec<String>, Vec<String>) {
+    let links: Vec<String> = get_index(&gh, &project, verbose, dindex, &file);
     let mut files: Vec<String> = Vec::new();
     let mut branches: Vec<String> = Vec::new();
     for link in &links {
@@ -132,22 +131,28 @@ fn get_files(gh: &GitHub, project: &Project, verbose: bool) -> (Vec<String>, Vec
             branches.push(split_dir_from_tree(&link.clone()));
         }
     }
-    files.remove(0);
+    println!("Links: {:?}", files); // !!!
+    if dindex < 2 {
+        files.remove(0);
+    }
     (files, branches)
 }
 
 fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
-    let (files, branches) = get_files(&gh, &project, verbose);
+    let (files, branches) = get_files(&gh, &project, verbose, 1, "index.html");
     for file in files {
         retrieve_file(&gh, &project, &file, verbose, 0);
     }
     for (i, branch) in branches.iter().enumerate() {
-        //println!("{}", branch);
         if i == 2 {
-            println!("!!! https://github.com/stpettersens/touch/tree/{}", branch);
-            let index = get_index(&gh, &project, true, 2, &branch);
+            let (filess, branchess) = get_files(&gh, &project, verbose, 2, &branch);
+            for file in filess {
+                retrieve_file(&gh, &project, &file, verbose, 0);
+            }
+            //println!("{:?}", filess);
+            //let index = get_index(&gh, &project, true, 2, &branch);
+            //println!("{:?}", index);
         }
-        //let (files, bbranches) = get_files
     }
 }
 
