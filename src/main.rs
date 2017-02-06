@@ -115,26 +115,27 @@ fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &
     links
 }
 
-
 fn get_files(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &str) 
 -> (Vec<String>, Vec<String>) {
     let links: Vec<String> = get_index(&gh, &project, verbose, dindex, &file);
     let mut files: Vec<String> = Vec::new();
     let mut branches: Vec<String> = Vec::new();
     for link in &links {
-        let mut p = Regex::new("/blob/").unwrap();
+        let mut p = Regex::new("https://").unwrap();
+        if p.is_match(&link) {
+            continue;
+        }
+        p = Regex::new("/blob/").unwrap();
         if p.is_match(&link) {
             files.push(split_url_from_blob(&link));
         }
-        p = Regex::new("/tree/").unwrap();
+        p = Regex::new(&format!("/tree/{}", &project.get_branch())).unwrap();
         if p.is_match(&link) {
             branches.push(split_dir_from_tree(&link.clone()));
         }
     }
-    //println!("Links: {:?}", files); // !!!
-    /*if dindex < 2 {
-        files.remove(0);
-    }*/
+    //println!("Files: {:?}", files); // !!!
+    //println!("Branches: {:?}", branches); // !!!
     (files, branches)
 }
 
@@ -144,14 +145,9 @@ fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
         retrieve_file(&gh, &project, &file, verbose, 0);
     }
     for (i, branch) in branches.iter().enumerate() {
-        if i == 2 {
-            let (filess, branchess) = get_files(&gh, &project, verbose, 2, &branch);
-            for file in filess {
-                retrieve_file(&gh, &project, &file, verbose, 0);
-            }
-            //println!("{:?}", filess);
-            //let index = get_index(&gh, &project, true, 2, &branch);
-            //println!("{:?}", index);
+        let (filess, branchess) = get_files(&gh, &project, verbose, 2, &branch);
+        for file in filess {
+            retrieve_file(&gh, &project, &file, verbose, 0);
         }
     }
 }

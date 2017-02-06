@@ -20,4 +20,7 @@ impl Project {
     pub fn get_index_frag(&self) -> String {
         format!("{}", self.name)
     }
+    pub fn get_branch(&self) -> String {
+        self.branch.clone()
+    }
 }
