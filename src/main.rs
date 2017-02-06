@@ -73,7 +73,7 @@ fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, inde
             println!("Retrieving index: {}{}", gh.get_index_frag(), project.get_index_frag());
         }
     } else if index == 2 {
-        println!("Retrieving subindex: {}{}{}", gh.get_index_frag(), project.get_tree_frag(), file);
+        //println!("Retrieving subindex: {}{}{}", gh.get_index_frag(), project.get_tree_frag(), file);
         c.url(&format!("{}{}{}", gh.get_index_frag(), project.get_tree_frag(), file)).unwrap();
     } else {
         c.url(&format!("{}{}", gh.get_base_url(), file)).unwrap();
@@ -134,20 +134,44 @@ fn get_files(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &
             branches.push(split_dir_from_tree(&link.clone()));
         }
     }
-    //println!("Files: {:?}", files); // !!!
-    //println!("Branches: {:?}", branches); // !!!
+    /*println!("Files: {:?}", files); // !!!
+    println!("Branches: {:?}", branches); // !!!*/
     (files, branches)
 }
 
 fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
+    let mut done: Vec<String> = Vec::new();
     let (files, branches) = get_files(&gh, &project, verbose, 1, "index.html");
     for file in files {
         retrieve_file(&gh, &project, &file, verbose, 0);
+        done.push(file.clone());
     }
-    for (i, branch) in branches.iter().enumerate() {
-        let (filess, branchess) = get_files(&gh, &project, verbose, 2, &branch);
-        for file in filess {
-            retrieve_file(&gh, &project, &file, verbose, 0);
+    // This is a recursive problem. Can be done better than this. Ask at Open Code:
+    for branch in branches {
+        let (files, branches) = get_files(&gh, &project, verbose, 2, &branch);
+        for file in files {
+            if !done.contains(&file) {
+                retrieve_file(&gh, &project, &file, verbose, 0);
+            }
+            done.push(file.clone());
+        }
+        for branch in branches {
+            let (files, branches) = get_files(&gh, &project, verbose, 2, &branch);
+            for file in files {
+                if !done.contains(&file) {
+                    retrieve_file(&gh, &project, &file, verbose, 0);
+                }
+                done.push(file.clone());
+            }
+            for branch in branches {
+                let (files, branches) = get_files(&gh, &project, verbose, 2, &branch);
+                for file in files {
+                    if !done.contains(&file) {
+                        retrieve_file(&gh, &project, &file, verbose, 0);
+                    }
+                    done.push(file.clone());
+                }
+            }
         }
     }
 }
