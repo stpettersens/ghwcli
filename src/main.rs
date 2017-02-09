@@ -148,7 +148,6 @@ fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
     let tree: Vec<String> = get_tree(&gh, &project, verbose);
     for branch in &tree {
         let files = get_files(&gh, &project, verbose, 2, &branch);
-        println!("{:?}", files); // !
         for file in files {
             retrieve_file(&gh, &project, &file, verbose, 0);
         }
