@@ -124,6 +124,7 @@ fn get_tree(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
             tree.push(split_dir_from_tree(&link.clone()))
         }
     }
+    println!("Tree is: {:?}", tree); // !
     tree
 }
 
