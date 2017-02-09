@@ -115,6 +115,10 @@ fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &
     links
 }
 
+fn get_tree() {
+    // TODO
+}
+
 fn get_files(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &str) 
 -> (Vec<String>, Vec<String>) {
     let links: Vec<String> = get_index(&gh, &project, verbose, dindex, &file);
