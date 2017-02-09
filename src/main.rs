@@ -111,19 +111,26 @@ fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &
     for node in Document::from_str(&html).find(Name("a")).iter() {
         links.push(node.attr("href").unwrap().to_owned());
     }
-    let _ = fs::remove_file(&index); // !!!
+    //let _ = fs::remove_file(&index); // !!!
     links
 }
 
-fn get_tree() {
-    // TODO
+fn get_tree(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
+    let links: Vec<String> = get_index(&gh, &project, verbose, 1, "index.html");
+    let mut tree: Vec<String> = Vec::new();
+    for link in &links {
+        let p = Regex::new(&format!("/tree/{}", &project.get_branch())).unwrap();
+        if p.is_match(&link) {
+            tree.push(split_dir_from_tree(&link.clone()))
+        }
+    }
+    tree
 }
 
 fn get_files(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &str) 
--> (Vec<String>, Vec<String>) {
+-> Vec<String> {
     let links: Vec<String> = get_index(&gh, &project, verbose, dindex, &file);
     let mut files: Vec<String> = Vec::new();
-    let mut branches: Vec<String> = Vec::new();
     for link in &links {
         let mut p = Regex::new("https://").unwrap();
         if p.is_match(&link) {
@@ -133,49 +140,17 @@ fn get_files(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &
         if p.is_match(&link) {
             files.push(split_url_from_blob(&link));
         }
-        p = Regex::new(&format!("/tree/{}", &project.get_branch())).unwrap();
-        if p.is_match(&link) {
-            branches.push(split_dir_from_tree(&link.clone()));
-        }
     }
-    /*println!("Files: {:?}", files); // !!!
-    println!("Branches: {:?}", branches); // !!!*/
-    (files, branches)
+    files
 }
 
 fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
-    let mut done: Vec<String> = Vec::new();
-    let (files, branches) = get_files(&gh, &project, verbose, 1, "index.html");
-    for file in files {
-        retrieve_file(&gh, &project, &file, verbose, 0);
-        done.push(file.clone());
-    }
-    // This is a recursive problem. Can be done better than this. Ask at Open Code:
-    for branch in branches {
-        let (files, branches) = get_files(&gh, &project, verbose, 2, &branch);
+    let tree: Vec<String> = get_tree(&gh, &project, verbose);
+    for branch in &tree {
+        let files = get_files(&gh, &project, verbose, 2, &branch);
+        println!("{:?}", files); // !
         for file in files {
-            if !done.contains(&file) {
-                retrieve_file(&gh, &project, &file, verbose, 0);
-            }
-            done.push(file.clone());
-        }
-        for branch in branches {
-            let (files, branches) = get_files(&gh, &project, verbose, 2, &branch);
-            for file in files {
-                if !done.contains(&file) {
-                    retrieve_file(&gh, &project, &file, verbose, 0);
-                }
-                done.push(file.clone());
-            }
-            for branch in branches {
-                let (files, branches) = get_files(&gh, &project, verbose, 2, &branch);
-                for file in files {
-                    if !done.contains(&file) {
-                        retrieve_file(&gh, &project, &file, verbose, 0);
-                    }
-                    done.push(file.clone());
-                }
-            }
+            retrieve_file(&gh, &project, &file, verbose, 0);
         }
     }
 }
