@@ -16,7 +16,7 @@ extern crate select;
 extern crate clioptions;
 use github::GitHub;
 use project::Project;
-use curl::easy::Easy;
+use curl::easy::Easy as CurlRequest; /// <>
 use text_diff::{diff, print_diff, Difference};
 use rustc_serialize::json;
 use rustc_serialize::json::Json;
@@ -66,7 +66,7 @@ fn split_dir_from_tree(url: &str) -> String {
 }
 
 fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, index: u32) {
-    let mut c = Easy::new();
+    let mut c = CurlRequest::new(); // Easy::new(); <>
     if index == 1 {
         c.url(&format!("{}{}", gh.get_index_frag(), project.get_index_frag())).unwrap();
         if verbose {
