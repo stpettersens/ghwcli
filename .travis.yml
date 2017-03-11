@@ -6,10 +6,12 @@ language: rust
 
 before_install:
     - sudo apt-get install -y rubygems
+    - sudo apt-get install -y upx-ucl
     - sudo gem install os
     - ruby --version
     - rake --version
+    - upx --version
 
 script:
-    - rake
+    - rake upx
     - rake test
