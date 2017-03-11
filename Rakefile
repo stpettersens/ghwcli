@@ -18,7 +18,6 @@ task :upx => [:default] do
 		File.delete(target)
 	end
 	sh "upx -9 #{tp} -o #{target}"
-	sh "./#{target}"
 end
 
 task :cleanwrk do
