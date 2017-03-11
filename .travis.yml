@@ -11,5 +11,5 @@ before_install:
     - rake --version
 
 script:
-    - rake upx
+    - rake
     - rake test
