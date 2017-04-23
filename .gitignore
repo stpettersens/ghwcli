@@ -1,4 +1,5 @@
 target/
-_git_/
+__git__/
+__index.html
 *.exe
 .*

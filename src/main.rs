@@ -38,7 +38,7 @@ fn split_dir_from_file(df: &str) -> String {
     let split = df.split("/");
     let mut path: Vec<String> = Vec::new();
     for s in split {
-        if s.to_owed().len() > 0 {
+        if s.to_owned().len() > 0 {
             path.push(s.to_owned());
         }
     }
@@ -61,7 +61,7 @@ fn split_file_from_url(url: &str, branch: &str) -> String {
     path[idx + 1].to_owned()
 }
 
-fn retrieve_file(url: &str, html: bool, verbose: bool) {
+fn retrieve_file(url: &str, branch: &str, html: bool, verbose: bool) {
     let mut c = CurlRequest::new();
     c.url(url).unwrap();
     let mut w = File::create("__index.html").unwrap();
@@ -71,11 +71,11 @@ fn retrieve_file(url: &str, html: bool, verbose: bool) {
             let _ = fs::create_dir_all(p.clone());
         }
         let dir = format!("{}/{}", p, 
-        split_dir_from_file(&split_file_from_url(&url)));
+        split_dir_from_file(&split_file_from_url(&url, &branch)));
         if !Path::new(&dir).exists() {
             let _ = fs::create_dir_all(dir);
         }
-        let out = format!("{}/{}", p, split_file_from_url(&url));
+        let out = format!("{}/{}", p, split_file_from_url(&url, &branch));
         w = File::create(&out).unwrap();
     }
     c.write_function(move |data| {
@@ -87,7 +87,7 @@ fn retrieve_file(url: &str, html: bool, verbose: bool) {
         println!("GET {} -> {}", response, url);
     }
     if response != 200 && html {
-        let _ = fs::remove_file(&out);
+        let _ = fs::remove_file("__index.html");
     }
 }
 
@@ -102,13 +102,68 @@ fn get_links() -> Vec<String> {
     links
 }
 
-fn get_links_from(url: &str, verbose: bool) -> Vec<String> {
-    retrieve_file(url, true, verbose);
+fn get_links_from(url: &str, branch: &str, 
+verbose: bool) -> Vec<String> {
+    retrieve_file(url, branch, true, verbose);
     get_links()
 }
 
+fn tree_links_from(url: &str, base: &str,
+branch: &str, verbose: bool) -> Vec<String> {
+    let links = get_links_from(url, branch, verbose);
+    let mut tree: Vec<String> = Vec::new();
+    for link in links {
+        let mut p = Regex::new("https://").unwrap();
+        if p.is_match(&link) {
+            continue;
+        }
+        p = Regex::new(&format!("/tree/{}/", &branch)).unwrap();
+        if p.is_match(&link) {
+            tree.push(format!("{}{}", base, link));
+        }
+    }
+    tree
+}
+
+fn blob_links_from(url: &str, base: &str,
+branch: &str, verbose: bool) -> Vec<String> {
+    let links = get_links_from(url, branch, verbose);
+    let mut blobs: Vec<String> = Vec::new();
+    for link in links {
+        let mut p = Regex::new("https://").unwrap();
+        if p.is_match(&link) {
+            continue;
+        }
+        p = Regex::new(&format!("/blob/{}/", &branch)).unwrap();
+        if p.is_match(&link) {
+            blobs.push(format!("{}{}", base, 
+            split_from_blob(&link)));
+        }
+    }
+    blobs
+}
+
+fn download_files(files: Vec<String>, branch: &str, verbose: bool) {
+    for file in files {
+        retrieve_file(&file, &branch, false, verbose);
+    }
+}
+
 fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
-    // TODO
+    let url = format!("{}{}", gh.get_index_frag(), 
+    project.get_index_frag());
+    let tree = tree_links_from(&url, &gh.get_index_frag(),
+    &project.get_branch(), verbose);
+    let blobs = blob_links_from(&url, &gh.get_base_url(),
+    &project.get_branch(), verbose);
+    download_files(blobs, &project.get_branch(), verbose);
+    /*for t in tree {
+        let blobs = blob_links_from(&t,
+        &gh.get_base_url(), &project.get_branch(),
+        verbose);
+        download_files(blobs, &project.get_branch(),
+        verbose);
+    }*/
 }
 
 fn check_for_diff(orig: &str, edit: &str) {

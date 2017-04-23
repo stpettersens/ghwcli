@@ -21,7 +21,7 @@ task :upx => [:default] do
 end
 
 task :cleanwrk do
-	FileUtils.rm_rf("_git_");
+	FileUtils.rm_rf("__git__")
 end
 
 task :clean do
@@ -43,8 +43,8 @@ task :test do
 	sh "#{tp} clone stpettersens/touch"
 	puts 
 	if OS.windows? then
-		sh "type _git_\\stpettersens\\touch\\master\\README.md"
+		sh "type __git__\\README.md"
 	else
-		sh "cat _git_/stpettersens/touch/master/README.md"
+		sh "cat __git__/README.md"
 	end
 end
