@@ -16,7 +16,7 @@ extern crate select;
 extern crate clioptions;
 use github::GitHub;
 use project::Project;
-use curl::easy::Easy as CurlRequest; /// <>
+use curl::easy::Easy as CurlRequest;
 use text_diff::{diff, print_diff, Difference};
 use rustc_serialize::json;
 use rustc_serialize::json::Json;
@@ -30,129 +30,85 @@ use std::fs::File;
 use std::path::Path;
 use std::process::exit;
 
-fn split_path_from_file(pathstr: &str) -> String {
-    let split = pathstr.split("/");
+fn split_from_blob(url: &str) -> String {
+    str::replace(url, "/blob/", "/")
+}
+
+fn split_dir_from_file(df: &str) -> String {
+    let split = df.split("/");
     let mut path: Vec<String> = Vec::new();
     for s in split {
-        if s.to_owned().len() > 0 {
-            path.push(s.to_owned())
+        if s.to_owed().len() > 0 {
+            path.push(s.to_owned());
         }
     }
     path.pop();
     path.join("/")
 }
 
-fn split_url_from_blob(burl: &str) -> String {
-    let split = burl.split("/blob/");
-    let mut url: Vec<String> = Vec::new();
+fn split_file_from_url(url: &str, branch: &str) -> String {
+    let split = url.split("/");
+    let mut path: Vec<String> = Vec::new();
     for s in split {
         if s.to_owned().len() > 0 {
-            url.push(s.to_owned())
+            path.push(s.to_owned());
         }
     }
-    url.join("/")
+    let idx = path.len() - 2;
+    if path[idx] != branch {
+        return format!("{}/{}", path[idx], path[idx + 1]);
+    }
+    path[idx + 1].to_owned()
 }
 
-fn split_dir_from_tree(url: &str) -> String {
-    let split = url.split("/tree/");
-    let mut dir: Vec<String> = Vec::new();
-    for s in split {
-        if s.to_owned().len() > 0 {
-            dir.push(s.to_owned());
+fn retrieve_file(url: &str, html: bool, verbose: bool) {
+    let mut c = CurlRequest::new();
+    c.url(url).unwrap();
+    let mut w = File::create("__index.html").unwrap();
+    if !html {
+        let p = "__git__";
+        if !Path::new(&p).exists() {
+            let _ = fs::create_dir_all(p.clone());
         }
-    }
-    dir.remove(0);
-    dir.join("/")
-}
-
-fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, index: u32) {
-    let mut c = CurlRequest::new(); // Easy::new(); <>
-    if index == 1 {
-        c.url(&format!("{}{}", gh.get_index_frag(), project.get_index_frag())).unwrap();
-        if verbose {
-            println!("Retrieving index: {}{}", gh.get_index_frag(), project.get_index_frag());
+        let dir = format!("{}/{}", p, 
+        split_dir_from_file(&split_file_from_url(&url)));
+        if !Path::new(&dir).exists() {
+            let _ = fs::create_dir_all(dir);
         }
-    } else if index == 2 {
-        //println!("Retrieving subindex: {}{}{}", gh.get_index_frag(), project.get_tree_frag(), file);
-        c.url(&format!("{}{}{}", gh.get_index_frag(), project.get_tree_frag(), file)).unwrap();
-    } else {
-        c.url(&format!("{}{}", gh.get_base_url(), file)).unwrap();
+        let out = format!("{}/{}", p, split_file_from_url(&url));
+        w = File::create(&out).unwrap();
     }
-    let pw = "_git_";
-    let mut out = format!("{}/{}", pw, file);
-    if index == 2 {
-        out = format!("{}/index.html", pw);
-    }
-    let p = split_path_from_file(&out);
-    if !Path::new(&p).exists() {
-        let _ = fs::create_dir_all(p);
-    }
-    let mut w = File::create(&out).unwrap();
     c.write_function(move |data| {
         Ok(w.write(data).unwrap())
     }).unwrap();
     c.perform().unwrap();
-    if c.response_code().unwrap() != 200 {
-        let _ = fs::remove_file(&out);
+    let response = c.response_code().unwrap();
+    if verbose {
+        println!("GET {} -> {}", response, url);
     }
-    if verbose && index == 0 {
-        println!("Retrieved file: {}{} [{}]", 
-        gh.get_base_url(), file, c.response_code().unwrap());
+    if response != 200 && html {
+        let _ = fs::remove_file(&out);
     }
 }
 
-fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &str) -> Vec<String> {
-    retrieve_file(&gh, &project, file, verbose, dindex);
-    let index = "_git_/index.html";
-    let mut f = File::open(&index).unwrap();
+fn get_links() -> Vec<String> {
+    let mut f = File::open("__index.html").unwrap();
     let mut html = String::new();
     let _ = f.read_to_string(&mut html);
     let mut links: Vec<String> = Vec::new();
     for node in Document::from_str(&html).find(Name("a")).iter() {
         links.push(node.attr("href").unwrap().to_owned());
     }
-    //let _ = fs::remove_file(&index); // !!!
     links
 }
 
-fn get_tree(gh: &GitHub, project: &Project, verbose: bool) -> Vec<String> {
-    let links: Vec<String> = get_index(&gh, &project, verbose, 1, "index.html");
-    let mut tree: Vec<String> = Vec::new();
-    for link in &links {
-        let p = Regex::new(&format!("/tree/{}", &project.get_branch())).unwrap();
-        if p.is_match(&link) {
-            tree.push(split_dir_from_tree(&link.clone()))
-        }
-    }
-    println!("Tree is: {:?}", tree); // !
-    tree
-}
-
-fn get_files(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &str) 
--> Vec<String> {
-    let links: Vec<String> = get_index(&gh, &project, verbose, dindex, &file);
-    let mut files: Vec<String> = Vec::new();
-    for link in &links {
-        let mut p = Regex::new("https://").unwrap();
-        if p.is_match(&link) {
-            continue;
-        }
-        p = Regex::new("/blob/").unwrap();
-        if p.is_match(&link) {
-            files.push(split_url_from_blob(&link));
-        }
-    }
-    files
+fn get_links_from(url: &str, verbose: bool) -> Vec<String> {
+    retrieve_file(url, true, verbose);
+    get_links()
 }
 
 fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
-    let tree: Vec<String> = get_tree(&gh, &project, verbose);
-    for branch in &tree {
-        let files = get_files(&gh, &project, verbose, 2, &branch);
-        for file in files {
-            retrieve_file(&gh, &project, &file, verbose, 0);
-        }
-    }
+    // TODO
 }
 
 fn check_for_diff(orig: &str, edit: &str) {
