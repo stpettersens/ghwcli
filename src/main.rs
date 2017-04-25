@@ -61,10 +61,21 @@ fn split_file_from_url(url: &str, branch: &str) -> String {
     path[idx + 1].to_owned()
 }
 
+fn split_double(url: &str, gh: &GitHub) -> String {
+    let split = url.split("//");
+    let mut path: Vec<String> = Vec::new();
+    for s in split {
+        if s.to_owned().len() > 0 {
+            path.push(s.to_owned());
+        }
+    }
+    format!("{}/{}", gh.get_root_url(), path[path.len() - 1])
+}
+
 fn retrieve_file(url: &str, branch: &str, html: bool, verbose: bool) {
     let mut c = CurlRequest::new();
     c.url(url).unwrap();
-    let mut w = File::create("__index.html").unwrap();
+    let mut w = File::create("__repo__index.html").unwrap();
     if !html {
         let p = "__git__";
         if !Path::new(&p).exists() {
@@ -84,15 +95,23 @@ fn retrieve_file(url: &str, branch: &str, html: bool, verbose: bool) {
     c.perform().unwrap();
     let response = c.response_code().unwrap();
     if verbose {
-        println!("GET {} -> {}", response, url);
+        if html {
+            println!("Retrieved index [{}]: {}", response, url);
+        } else {
+            println!("Retrieved file [{}]: {}", response, url);
+        }
     }
-    if response != 200 && html {
-        let _ = fs::remove_file("__index.html");
+}
+
+fn clean_up_index() {
+    let idx = "__repo__index.html";
+    if Path::new(idx).exists() {
+        let _ = fs::remove_file(idx);
     }
 }
 
 fn get_links() -> Vec<String> {
-    let mut f = File::open("__index.html").unwrap();
+    let mut f = File::open("__repo__index.html").unwrap();
     let mut html = String::new();
     let _ = f.read_to_string(&mut html);
     let mut links: Vec<String> = Vec::new();
@@ -102,68 +121,59 @@ fn get_links() -> Vec<String> {
     links
 }
 
-fn get_links_from(url: &str, branch: &str, 
-verbose: bool) -> Vec<String> {
+fn get_links_from(url: &str, branch: &str, verbose: bool) -> Vec<String> {
     retrieve_file(url, branch, true, verbose);
     get_links()
 }
 
-fn tree_links_from(url: &str, base: &str,
-branch: &str, verbose: bool) -> Vec<String> {
-    let links = get_links_from(url, branch, verbose);
+fn tree_links_from(url: &str, gh: &GitHub, prj: &Project, verbose: bool) -> Vec<String> {
+    let links = get_links_from(url, &prj.get_branch(), verbose);
     let mut tree: Vec<String> = Vec::new();
     for link in links {
         let mut p = Regex::new("https://").unwrap();
         if p.is_match(&link) {
             continue;
         }
-        p = Regex::new(&format!("/tree/{}/", &branch)).unwrap();
+        p = Regex::new(&format!("/tree/{}/", &prj.get_branch())).unwrap();
         if p.is_match(&link) {
-            tree.push(format!("{}{}", base, link));
+            tree.push(format!("{}{}", gh.get_index_frag(), link));
         }
     }
     tree
 }
 
-fn blob_links_from(url: &str, base: &str,
-branch: &str, verbose: bool) -> Vec<String> {
-    let links = get_links_from(url, branch, verbose);
+fn blob_links_from(url: &str, gh: &GitHub, prj: &Project, verbose: bool) -> Vec<String> {
+    let links = get_links_from(url, &prj.get_branch(), verbose);
     let mut blobs: Vec<String> = Vec::new();
     for link in links {
         let mut p = Regex::new("https://").unwrap();
         if p.is_match(&link) {
             continue;
         }
-        p = Regex::new(&format!("/blob/{}/", &branch)).unwrap();
+        p = Regex::new(&format!("/blob/{}/", &prj.get_branch())).unwrap();
         if p.is_match(&link) {
-            blobs.push(format!("{}{}", base, 
-            split_from_blob(&link)));
+            blobs.push(format!("{}{}", gh.get_base_url(), split_from_blob(&link)));
         }
     }
     blobs
 }
 
-fn download_files(files: Vec<String>, branch: &str, verbose: bool) {
+fn download_files(files: Vec<String>, prj: &Project, verbose: bool) {
     for file in files {
-        retrieve_file(&file, &branch, false, verbose);
+        retrieve_file(&file, &prj.get_branch(), false, verbose);
     }
 }
 
-fn retrieve_repo(gh: &GitHub, project: &Project, verbose: bool) {
-    let url = format!("{}{}", gh.get_index_frag(), 
-    project.get_index_frag());
-    let tree = tree_links_from(&url, &gh.get_index_frag(),
-    &project.get_branch(), verbose);
-    let blobs = blob_links_from(&url, &gh.get_base_url(),
-    &project.get_branch(), verbose);
-    download_files(blobs, &project.get_branch(), verbose);
-    /*for t in tree {
-        let blobs = blob_links_from(&t,
-        &gh.get_base_url(), &project.get_branch(),
-        verbose);
-        download_files(blobs, &project.get_branch(),
-        verbose);
-    }*/
+fn retrieve_repo(gh: &GitHub, prj: &Project, verbose: bool) {
+    let url = format!("{}{}", gh.get_index_frag(), prj.get_index_frag());
+    let tree = tree_links_from(&url, &gh, &prj, verbose);
+    let blobs = blob_links_from(&url, &gh, &prj, verbose);
+    download_files(blobs, &prj, verbose);
+    for t in tree {
+        let blobs = blob_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
+        download_files(blobs, &prj, verbose);
+    }
+    clean_up_index();
 }
 
 fn check_for_diff(orig: &str, edit: &str) {

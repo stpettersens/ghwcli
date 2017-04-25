@@ -11,6 +11,9 @@ impl GitHub {
             password: password.to_owned(),
         }
     }
+    pub fn get_root_url(&self) -> String {
+        "https://github.com".to_owned()
+    }
     pub fn get_base_url(&self) -> String {
         "https://raw.githubusercontent.com".to_owned()
     }
