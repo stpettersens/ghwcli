@@ -21,6 +21,6 @@ impl GitHub {
         format!("{}/{}/", self.get_base_url(), self.username)
     }
     pub fn get_index_frag(&self) -> String {
-        format!("https://github.com/{}/", self.username)
+        format!("{}/{}/", self.get_root_url(), self.username)
     }
 }

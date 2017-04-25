@@ -95,9 +95,7 @@ fn retrieve_file(url: &str, branch: &str, html: bool, verbose: bool) {
     c.perform().unwrap();
     let response = c.response_code().unwrap();
     if verbose {
-        if html {
-            println!("Retrieved index [{}]: {}", response, url);
-        } else {
+        if !html {
             println!("Retrieved file [{}]: {}", response, url);
         }
     }
@@ -170,8 +168,18 @@ fn retrieve_repo(gh: &GitHub, prj: &Project, verbose: bool) {
     let blobs = blob_links_from(&url, &gh, &prj, verbose);
     download_files(blobs, &prj, verbose);
     for t in tree {
+        let tree = tree_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
         let blobs = blob_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
         download_files(blobs, &prj, verbose);
+        for t in tree {
+            let tree = tree_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
+            let blobs = blob_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
+            /*download_files(blobs, &prj, verbose);
+            for t in tree {
+                let blobs = blob_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
+                download_files(blobs, &prj, verbose);
+            }*/
+        }
     }
     clean_up_index();
 }
