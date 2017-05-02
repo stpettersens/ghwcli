@@ -24,6 +24,10 @@ task :cleanwrk do
 	FileUtils.rm_rf("__git__")
 end
 
+task :cleangit do
+	FileUtils.rm_rf("git")
+end
+
 task :clean do
 	sh "cargo clean"
 	if File.exists?(target) then

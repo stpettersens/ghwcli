@@ -156,29 +156,40 @@ fn blob_links_from(url: &str, gh: &GitHub, prj: &Project, verbose: bool) -> Vec<
     blobs
 }
 
-fn download_files(files: Vec<String>, prj: &Project, verbose: bool) {
+fn download_files(downloaded: Vec<String>, files: Vec<String>, 
+prj: &Project, verbose: bool) -> Vec<String> {
+    let mut dld: Vec<String> = Vec::new();
     for file in files {
-        retrieve_file(&file, &prj.get_branch(), false, verbose);
+        if !downloaded.contains(&file) {
+            retrieve_file(&file, &prj.get_branch(), false, verbose);
+            dld.push(file.to_owned());
+        }
     }
+    dld
 }
 
 fn retrieve_repo(gh: &GitHub, prj: &Project, verbose: bool) {
     let url = format!("{}{}", gh.get_index_frag(), prj.get_index_frag());
     let tree = tree_links_from(&url, &gh, &prj, verbose);
     let blobs = blob_links_from(&url, &gh, &prj, verbose);
-    download_files(blobs, &prj, verbose);
+    let mut adld: Vec<String> = Vec::new();
+    let mut dld = download_files(adld.clone(), blobs, &prj, verbose);
+    adld.append(&mut dld);
     for t in tree {
         let tree = tree_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
         let blobs = blob_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
-        download_files(blobs, &prj, verbose);
+        let mut dld = download_files(adld.clone(), blobs, &prj, verbose);
+        adld.append(&mut dld);
         for t in tree {
             let tree = tree_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
             let blobs = blob_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
-            /*download_files(blobs, &prj, verbose);
+            let mut dld = download_files(adld.clone(), blobs, &prj, verbose);
+            adld.append(&mut dld);
             for t in tree {
                 let blobs = blob_links_from(&split_double(&t, &gh), &gh, &prj, verbose);
-                download_files(blobs, &prj, verbose);
-            }*/
+                let mut dld = download_files(adld.clone(), blobs, &prj, verbose);
+                adld.append(&mut dld);
+            }
         }
     }
     clean_up_index();

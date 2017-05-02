@@ -1,5 +1,5 @@
 target/
 __git__/
-__index.html
+__repo__index.html
 *.exe
 .*
