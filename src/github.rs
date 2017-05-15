@@ -1,4 +1,4 @@
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GitHub {
     username: String,
     password: String,
