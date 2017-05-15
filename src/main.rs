@@ -10,7 +10,10 @@ mod github;
 mod project;
 extern crate curl;
 extern crate text_diff;
-extern crate rustc_serialize;
+extern crate serde;
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 extern crate regex;
 extern crate select;
 extern crate clioptions;
@@ -18,8 +21,6 @@ use github::GitHub;
 use project::Project;
 use curl::easy::Easy as CurlRequest;
 use text_diff::{diff, print_diff, Difference};
-use rustc_serialize::json;
-use rustc_serialize::json::Json;
 use regex::Regex;
 use select::document::Document;
 use select::predicate::Name;
@@ -224,16 +225,16 @@ fn write_gh_configuration(conf: &str) {
     let username = get_input("Username");
     let password = get_input("Password");
     let gh = GitHub::new(&username, &password);
-    let o = json::encode(&gh).unwrap();
-    write_common_configuration(conf, &o);
+    let j = serde_json::to_string(&gh).unwrap();
+    write_common_configuration(conf, &j);
 }
 
 fn write_project_configuration(conf: &str) {
     let name = get_input("Project name");
     let branch = get_input("Branch");
     let project = Project::new(&name, &branch);
-    let o = json::encode(&project).unwrap();
-    write_common_configuration(conf, &o);
+    let j = serde_json::to_string(&project).unwrap();
+    write_common_configuration(conf, &j);
 }
 
 fn load_common_configuration(conf: &str) -> String {
@@ -244,13 +245,15 @@ fn load_common_configuration(conf: &str) -> String {
 }
 
 fn load_gh_configuration(conf: &str) -> GitHub {
-    let ghj = Json::from_str(&load_common_configuration(&conf)).unwrap();
-    json::decode(&ghj.to_string()).unwrap()
+    //let ghj = Json::from_str(&load_common_configuration(&conf)).unwrap();
+    //json::decode(&ghj.to_string()).unwrap()
+    serde_json::from_str(&load_common_configuration(&conf)).unwrap()
 }
 
 fn load_project_configuration(conf: &str) -> Project {
-    let prj = Json::from_str(&load_common_configuration(&conf)).unwrap();
-    json::decode(&prj.to_string()).unwrap()
+    //let prj = Json::from_str(&load_common_configuration(&conf)).unwrap();
+    //json::decode(&prj.to_string()).unwrap()
+    serde_json::from_str(&load_common_configuration(&conf)).unwrap()
 }
 
 fn display_version() {
