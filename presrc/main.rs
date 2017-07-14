@@ -8,7 +8,9 @@
 
 mod github;
 mod project;
+//#if USE_CURL_LIB
 extern crate curl;
+//#endif
 extern crate text_diff;
 extern crate rustc_serialize;
 extern crate regex;
@@ -16,7 +18,9 @@ extern crate select;
 extern crate clioptions;
 use github::GitHub;
 use project::Project;
+//#if USE_CURL_LIB
 use curl::easy::Easy as CurlRequest;
+//#endif
 use text_diff::{diff, print_diff, Difference};
 use rustc_serialize::json;
 use rustc_serialize::json::Json;
@@ -66,6 +70,7 @@ fn split_dir_from_tree(url: &str) -> String {
 }
 
 fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, index: u32) {
+    //#if USE_CURL_LIB
     let mut c = CurlRequest::new();
     if index == 1 {
         c.url(&format!("{}{}", gh.get_index_frag(), project.get_index_frag())).unwrap();
@@ -99,6 +104,10 @@ fn retrieve_file(gh: &GitHub, project: &Project, file: &str, verbose: bool, inde
         println!("Retrieved file: {}{} [{}]", 
         gh.get_base_url(), file, c.response_code().unwrap());
     }
+    //#endif
+    //#if USE_CURL_EXT
+    println!("!TODO");
+    //#endif
 }
 
 fn get_index(gh: &GitHub, project: &Project, verbose: bool, dindex: u32, file: &str) -> Vec<String> {

@@ -3,10 +3,15 @@ require 'fileutils'
 
 target = "ghwcli"
 tp = "target/release/#{target}"
+srcin = "presrc/main.rs"
+srcout = "src/main.rs"
+ppcondition = "USE_CURL_LIB" # or USE_CURL_EXT
 
 if OS.windows? then
 	target = "#{target}.exe"
 	tp = "target\\release\\#{target}"
+	srcin = "presrc\\main.rs"
+	srcout = "src\\main.rs"
 end
 
 task :default do
@@ -18,6 +23,11 @@ task :upx => [:default] do
 		File.delete(target)
 	end
 	sh "upx -9 #{tp} -o #{target}"
+end
+
+task :configure do
+	sh "fm --file _Cargo.toml --condition #{ppcondition} --out Cargo.toml"
+	sh "fm --file #{srcin} --condition #{ppcondition} --out #{srcout}"
 end
 
 task :cleanwrk do
