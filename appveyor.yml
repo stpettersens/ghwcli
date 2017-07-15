@@ -7,6 +7,7 @@ install:
     - cd full-monkey
     - rake && rake installci
     - cd ..
+    - fm --version
     - ruby --version
     - rake --version
     - rustc --version
