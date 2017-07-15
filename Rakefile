@@ -5,7 +5,7 @@ target = "ghwcli"
 tp = "target/release/#{target}"
 srcin = "presrc/main.rs"
 srcout = "src/main.rs"
-ppcondition = "USE_CURL_LIB" # or USE_CURL_EXT
+ppcondition = "USE_CURL_LIB" # or USE_CURL_EXT; TODO switch this around.
 
 if OS.windows? then
 	target = "#{target}.exe"
