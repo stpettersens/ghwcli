@@ -7,6 +7,10 @@ language: rust
 before_install:
     - sudo apt-get install -y rubygems
     - sudo gem install os
+    - git clone https://github.com/stpettersens/full-monkey.git
+    - cd full-monkey
+    - rake && sudo rake installci
+    - cd ..
     - ruby --version
     - rake --version
 

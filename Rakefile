@@ -14,7 +14,7 @@ if OS.windows? then
 	srcout = "src\\main.rs"
 end
 
-task :default do
+task :default => [:configure] do
 	sh "cargo build --release"
 end
 

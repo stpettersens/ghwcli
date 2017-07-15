@@ -3,6 +3,10 @@ install:
     - rust-nightly-i686-pc-windows-msvc.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
     - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
     - gem install os
+    - git clone https://github.com/stpettersens/full-monkey.git
+    - cd full-monkey
+    - rake && rake installci
+    - cd ..
     - ruby --version
     - rake --version
     - rustc --version
