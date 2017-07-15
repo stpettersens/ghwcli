@@ -9,8 +9,9 @@ before_install:
     - sudo gem install os
     - git clone https://github.com/stpettersens/full-monkey.git
     - cd full-monkey
-    - rake && sudo rake installci
+    - rake && sudo cp target/release/fm /usr/bin
     - cd ..
+    - fm --version
     - ruby --version
     - rake --version
 
